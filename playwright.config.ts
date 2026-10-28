@@ -31,7 +31,11 @@ export default defineConfig({
      well, so we always run one test at a time regardless of CI. */
   workers: 1,
   /* Reporter to use. See https://playwright.dev/docs/test-reporters */
- reporter: [['html', { open: 'never' }]],
+reporter: [
+  ['list'],
+  ['html', { open: 'never' }],
+  ['junit', { outputFile: 'test-results/results.xml' }],
+],
   /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
   use: {
     /* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
