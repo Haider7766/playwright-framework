@@ -1,0 +1,58 @@
+trigger: none                      # test repo push pe na chale (Classic mein ⚡ OFF jaisa)
+
+resources:
+  pipelines:
+  - pipeline: app                  # alias
+    source: 'Test project'         # tumhari build pipeline ka naam
+    trigger:
+      branches:
+        include: [ main ]          # naya build bane to CD khud chale (⚡ ON jaisa)
+
+variables:
+- group: playwright-secrets
+
+pool:
+  name: Default                    # self-hosted agent (PC)
+
+stages:
+- stage: QA
+  jobs:
+  - deployment: DeployAndTest
+    environment: QA                # Pipelines → Environments mein khud ban jayega
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          # ---------- Deploy ----------
+          - download: app
+            artifact: drop
+          - task: CopyFiles@2
+            displayName: Deploy to C:\demo-app
+            inputs:
+              SourceFolder: $(Pipeline.Workspace)/app/drop
+              Contents: '**'
+              TargetFolder: C:\demo-app
+              CleanTargetFolder: true
+              OverWrite: true
+
+          # ---------- Tests ----------
+          - checkout: self
+          - script: npm ci
+            displayName: Install dependencies
+            workingDirectory: $(Build.SourcesDirectory)
+          - script: npx playwright install
+            displayName: Install browsers
+            workingDirectory: $(Build.SourcesDirectory)
+          - script: npx playwright test
+            displayName: Run tests
+            workingDirectory: $(Build.SourcesDirectory)
+            env:
+              SAUCE_USERNAME: $(SAUCE_USERNAME)
+              SAUCE_PASSWORD: $(SAUCE_PASSWORD)
+          - task: PublishTestResults@2
+            displayName: Publish test results
+            condition: succeededOrFailed()   # tests fail hon tab bhi report
+            inputs:
+              testResultsFormat: JUnit
+              testResultsFiles: '**/results.xml'
+              searchFolder: $(Build.SourcesDirectory)
