@@ -12,7 +12,7 @@ test('clicks Checkout in the cart', async ({ authedPage }) => {
   const inventory = new InventoryPage(authedPage);
   const details = new ProductDetailsPage(authedPage);
   const cart = new CartPage(authedPage);
-
+await expect(authedPage).toHaveTitle('Wrong Title');
   // Open the Products screen. No login step: the saved session is already in this window.
   await inventory.open(inventoryData.url);
 
