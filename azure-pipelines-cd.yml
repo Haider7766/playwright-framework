@@ -1,12 +1,12 @@
-trigger: none                      # test repo push pe na chale (Classic mein ⚡ OFF jaisa)
+trigger: none                      # test repo push pe na chale
 
 resources:
   pipelines:
   - pipeline: app                  # alias
-    source: 'Test project'         # tumhari build pipeline ka naam
+    source: 'Test project'         # build (CI) pipeline ka naam
     trigger:
       branches:
-        include: [ main ]          # naya build bane to CD khud chale (⚡ ON jaisa)
+        include: [ main ]          # CI pass ho to CD khud chale
 
 variables:
 - group: playwright-secrets
@@ -18,7 +18,7 @@ stages:
 - stage: QA
   jobs:
   - deployment: DeployAndTest
-    environment: QA                # Pipelines → Environments mein khud ban jayega
+    environment: QA
     strategy:
       runOnce:
         deploy:
@@ -43,15 +43,15 @@ stages:
           - script: npx playwright install
             displayName: Install browsers
             workingDirectory: $(Build.SourcesDirectory)
-          - script: npx playwright test
-            displayName: Run tests
+          - script: npm run test:regression          # sirf @regression tests
+            displayName: Run regression tests
             workingDirectory: $(Build.SourcesDirectory)
             env:
               SAUCE_USERNAME: $(SAUCE_USERNAME)
               SAUCE_PASSWORD: $(SAUCE_PASSWORD)
           - task: PublishTestResults@2
             displayName: Publish test results
-            condition: succeededOrFailed()   # tests fail hon tab bhi report
+            condition: succeededOrFailed()
             inputs:
               testResultsFormat: JUnit
               testResultsFiles: '**/results.xml'

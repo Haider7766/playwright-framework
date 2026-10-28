@@ -5,7 +5,7 @@ import { TestData } from '../../fixtures/test-data';
 
 const data = TestData.login;
 
-setup('log in once and save the session', async ({ page }) => {
+setup('log in once and save the session', { tag: ['@smoke', '@regression'] }, async ({ page }) => {
   const login = new LoginPage(page);
   const navigation = new NavigationPage(page);
 

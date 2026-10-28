@@ -4,7 +4,7 @@ import { TestData } from '../../../fixtures/test-data';
 const data = TestData.users;
 
 // usersApi = the Users API client from base.ts (no browser is needed for an API test).
-test('creates a user (POST)', async ({ usersApi }) => {
+test('creates a user (POST)',  { tag: '@smoke' },async ({ usersApi }) => {
   const response = await usersApi.createCustomer(data.newUser);
   const body = await response.json();
 

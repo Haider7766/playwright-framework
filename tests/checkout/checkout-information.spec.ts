@@ -11,7 +11,7 @@ const usersData = TestData.users;
 const data = TestData.checkout;
 
 // authedPage = the browser (already logged in). usersApi = the API client that supplies the data.
-test('fills the checkout form with a customer taken from the API', async ({ authedPage, usersApi }) => {
+test('fills the checkout form with a customer taken from the API', { tag: '@regression' }, async ({ authedPage, usersApi }) => {
   const inventory = new InventoryPage(authedPage);
   const details = new ProductDetailsPage(authedPage);
   const cart = new CartPage(authedPage);
