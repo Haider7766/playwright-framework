@@ -1,6 +1,9 @@
 import 'dotenv/config';
 import { defineConfig, devices } from '@playwright/test';
 
+// True when running in a pipeline. Azure DevOps sets TF_BUILD; GitHub/GitLab set CI.
+const isCI = !!process.env.CI || !!process.env.TF_BUILD;
+
 // The browser settings that the login setup and the UI tests share.
 const uiUse = {
   ...devices['Desktop Chrome'],
@@ -23,19 +26,19 @@ export default defineConfig({
 
   /* Run tests in files in parallel */
   fullyParallel: true,
-  /* Fail the build on CI if you accidentally left test.only in the source code. */
-  forbidOnly: !!process.env.CI,
-  /* Retry on CI only */
-  retries: process.env.CI ? 2 : 0,
+  /* Fail the pipeline if test.only was accidentally left in the source code. */
+  forbidOnly: isCI,
+  /* Retry failed tests twice in the pipeline only */
+  retries: isCI ? 2 : 0,
   /* This QA server doesn't handle multiple simultaneous logins/sessions
      well, so we always run one test at a time regardless of CI. */
   workers: 1,
-  /* Reporter to use. See https://playwright.dev/docs/test-reporters */
-reporter: [
-  ['list'],
-  ['html', { open: 'never' }],
-  ['junit', { outputFile: 'test-results/results.xml' }],
-],
+  /* Reporters: list (console), html (report folder), junit (Azure Tests tab) */
+  reporter: [
+    ['list'],
+    ['html', { open: 'never' }],
+    ['junit', { outputFile: 'test-results/results.xml' }],
+  ],
   /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
   use: {
     /* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
@@ -43,8 +46,10 @@ reporter: [
 
     /* Ignore self-signed / internal SSL certificate warnings on QA/internal domains. */
     ignoreHTTPSErrors: true,
-    video: 'on',
-    screenshot: 'on',
+
+    /* Keep video and screenshot only for failed tests (faster runs, less disk) */
+    video: 'retain-on-failure',
+    screenshot: 'only-on-failure',
   },
 
   /* Configure projects */
@@ -69,6 +74,6 @@ reporter: [
         // The booking service answers 418 unless the call says it wants JSON.
         extraHTTPHeaders: { Accept: 'application/json' },
       },
-    }
+    },
   ],
 });
