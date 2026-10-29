@@ -1,0 +1,58 @@
+trigger: none
+
+resources:
+  pipelines:
+  - pipeline: app
+    source: 'CI pipeline'
+    trigger:
+      branches:
+        include: [ main ] 
+
+variables:
+- group: playwright-secrets
+
+pool:
+  name: Default
+
+stages:
+- stage: QA
+  jobs:
+  - deployment: DeployAndTest
+    environment: QA
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          # ---------- Deploy ----------
+          - download: app
+            artifact: drop
+          - task: CopyFiles@2
+            displayName: Deploy to C:\demo-app
+            inputs:
+              SourceFolder: $(Pipeline.Workspace)/app/drop
+              Contents: '**'
+              TargetFolder: C:\demo-app
+              CleanTargetFolder: true
+              OverWrite: true
+
+          # ---------- Regression tests ----------
+          - checkout: self
+          - script: npm ci
+            displayName: Install dependencies
+            workingDirectory: $(Build.SourcesDirectory)
+          - script: npx playwright install
+            displayName: Install browsers
+            workingDirectory: $(Build.SourcesDirectory)
+          - script: npm run test:regression
+            displayName: Run regression tests
+            workingDirectory: $(Build.SourcesDirectory)
+            env:
+              SAUCE_USERNAME: $(SAUCE_USERNAME)
+              SAUCE_PASSWORD: $(SAUCE_PASSWORD)
+          - task: PublishTestResults@2
+            displayName: Publish test results
+            condition: succeededOrFailed()
+            inputs:
+              testResultsFormat: JUnit
+              testResultsFiles: '**/results.xml'
+              searchFolder: $(Build.SourcesDirectory)
